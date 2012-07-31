@@ -14,6 +14,8 @@ var ace = require("ace/ace"),
     Range = require("ace/range").Range,
     useragent = require("ace/lib/useragent");
 
+var slice = Array.prototype.slice;
+
 function bindKey(win, mac) {
     return {
         win: win,
@@ -230,25 +232,6 @@ var defaultCommands = [{
     multiSelectAction: "forEach"
 }];
 
-/*
-commands.handleKeyboard = function(data, hashId, keyString, keyCode, ev) {
-    // Normal keys
-    if(hashId == -1) {
-        // way to cancel bubbling
-        //if(keyString != 'a') {
-        //    return {command: {exec: function() {return true;}}};
-        //}
-    }
-    // Commands
-    else {
-        var command = this.findKeyCommand(hashId, keyString);
-        if(command) {
-            return {command: command};
-        }
-    }
-};
-*/
-
 var Console = exports.Console = window.Console = function(el, options) {
     var self = this;
     var editor = this.editor = ace.edit(el);
@@ -270,12 +253,32 @@ var Console = exports.Console = window.Console = function(el, options) {
         defaultCommands.concat(options.keybinds.map(function(command) {
             return extend({}, command, {
                 exec: function(editor) {
-                    var shifted_args = Array.prototype.slice.call(arguments, 1);
+                    var shifted_args = slice.call(arguments, 1);
                     command.exec.apply(this, [self].concat(shifted_args));
                 }
             });
         }))
     );
+
+    var handleKeyboard = commands.handleKeyboard;
+    commands.handleKeyboard = function(data, hashId, keyString, keyCode, ev) {
+        var args = [self].concat(arguments);
+        // Normal keys
+        if(hashId == -1) {
+            if(!self.options.handleKeyboard.apply(this, args)) {
+                // way to cancel bubbling
+                return {command: {exec: function() {return true;}}};
+            }
+            return handleKeyboard.apply(this, arguments);
+        }
+        // Commands
+        else {
+            if(self.options.handleKeyboard.apply(this, args)) {
+                // keep going
+                return handleKeyboard.apply(this, arguments);
+            }
+        }
+    };
 
     // Seting our custom key bindings
     this._commands = editor.commands;
@@ -517,7 +520,27 @@ var Console = exports.Console = window.Console = function(el, options) {
  * Defaults
  */
 Console.defaults = {
-    keybinds: []
+    /**
+     * options.keybinds = []    // Custom keybinds
+     * - For more information on the data structure, see:
+     *   ace/commands/default_commands;
+     */
+    keybinds: [],
+
+    /**
+     * options.handleKeyboard(data, hashId, keyString, keyCode)
+     * - console (Console instance): the console instance;
+     * - other arguments: for more details, see
+     *   ace/keyboard/hash_handler#handleKeyboard, and
+     *   ace/keyboard/keybinding#$callKeyboardHandlers;
+     *
+     * Returns whether or not to echo the character:
+     * - (true) to echo;
+     * - (false) NOT to echo;
+     */
+    handleKeyboard: function(console, data, hashId, keyString, keyCode) {
+        return true;
+    }
 };
 
 });
