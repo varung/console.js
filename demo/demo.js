@@ -30,8 +30,8 @@ require([ "require", "ace/ace", "src/shell", "src/console", "src/util" ], functi
             }
             return output;
         },
-        completion: function(partialCmd) {
-            return "akak";
+        complete: function(partialCmd) {
+            return ".completion.stuff";
         }
     });
     shell.editor.setTheme("ace/theme/textmate");

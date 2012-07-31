@@ -27,18 +27,6 @@ var defaultCommands = [{
     exec: function(editor) { editor.toggleOverwrite(); },
     readOnly: true
 }, {
-    name: "historyprev",
-    bindKey: bindKey("Up|Ctrl-P", "Up|Ctrl-P"),
-    exec: function(editor, args) { editor.console.historyPrev(args.times); },
-    multiSelectAction: "forEach",
-    readOnly: true
-}, {
-    name: "historynext",
-    bindKey: bindKey("Down|Ctrl-N", "Down|Ctrl-N"),
-    exec: function(editor, args) { editor.console.historyNext(args.times); },
-    multiSelectAction: "forEach",
-    readOnly: true
-}, {
     name: "gotostart",
     bindKey: bindKey("Ctrl-Home", "Command-Home|Command-Up"),
     exec: function(editor) { editor.console.navigateFileStart(); },
@@ -176,12 +164,8 @@ var defaultCommands = [{
 // commands disabled in readOnly mode
 {
     name: "enter",
-    bindKey: bindKey("Return", "Return"),
+    bindKey: "Return",
     exec: function(editor) { editor.console.enter(); }
-}, {
-    name: "expand",
-    bindKey: bindKey("Tab", "Tab"),
-    exec: function(editor) { editor.console.completion(); }
 }, {
     name: "cut",
     exec: function(editor) {
@@ -246,8 +230,6 @@ var defaultCommands = [{
     multiSelectAction: "forEach"
 }];
 
-var commands = new CommandManager(useragent.isMac ? "mac" : "win", defaultCommands);
-
 /*
 commands.handleKeyboard = function(data, hashId, keyString, keyCode, ev) {
     // Normal keys
@@ -267,46 +249,33 @@ commands.handleKeyboard = function(data, hashId, keyString, keyCode, ev) {
 };
 */
 
-var History = exports.History = function() {
-    this.history = [null, null];
-    this.i = 0;
-};
-
-History.prototype = {
-    push: function(cmd) {
-        this.history.pop();
-        this.history.push(cmd);
-        this.history.push(null);
-        this.i = this.history.length - 1;
-        return cmd;
-    },
-
-    next: function() {
-        this.i = Math.min(this.i + 1, this.history.length - 1);
-        return this.history[this.i];
-    },
-
-    prev: function() {
-        this.i = Math.max(0, this.i - 1);
-        return this.history[this.i];
-    }
-};
-
-
 var Console = exports.Console = window.Console = function(el, options) {
+    var self = this;
     var editor = this.editor = ace.edit(el);
     this.options = extend({}, Console.defaults, options);
     editor.setReadOnly(true);
     editor.console = this;
     this.cursor = this.editor.getCursorPosition();
     this.boundary = new Range.fromPoints(this.cursor, this.cursor);
-    this.history = new History();
 
     editor.on("click", proxy(this.onCursorMove, this));
 
     // Overloading editor.onPaste
     this.onPaste = editor.onPaste;
     editor.onPaste = proxy(this.onPaste, this);
+
+    // Combining default commands with option.keybinds
+    var commands = new CommandManager(
+        useragent.isMac ? "mac" : "win",
+        defaultCommands.concat(options.keybinds.map(function(command) {
+            return extend({}, command, {
+                exec: function(editor) {
+                    var shifted_args = Array.prototype.slice.call(arguments, 1);
+                    command.exec.apply(this, [self].concat(shifted_args));
+                }
+            });
+        }))
+    );
 
     // Seting our custom key bindings
     this._commands = editor.commands;
@@ -321,17 +290,6 @@ var Console = exports.Console = window.Console = function(el, options) {
 (function(){
     var self = this;
 
-    // colateral effect: changes cursor position
-    this._getInput = function() {
-        this.navigateFileEnd();
-        return this._getInputUpToCursor();
-    };
-
-    this._getInputUpToCursor = function() {
-        this.boundary.setEnd(this.cursor.row, this.cursor.column);
-        return this.editor.session.getTextRange(this.boundary);
-    };
-
     this._isInBoundary = function(point) {
         var bs = this.boundary.start;
         return point.row > bs.row ||
@@ -342,29 +300,17 @@ var Console = exports.Console = window.Console = function(el, options) {
         this.cursor = this.editor.getCursorPosition();
     };
 
-    this.completion = function() {
-        this.insert(this.options.completion(this._getInputUpToCursor()));
+    this.getInput = function() {
+        var cursor = this.cursor;
+        this.navigateFileEnd();
+        var input = this.getInputUpToCursor();
+        this.moveCursorTo(cursor.row, cursor.column);
+        return input;
     };
 
-    this.enter = function() {
-        var cb = this._inputCallback,
-            input, ret;
-        delete this._inputCallback;
-        input = this._getInput();
-        this.puts("\n");
-        this.editor.setReadOnly(true);
-        ret = cb(input);
-        if(ret === false) {
-            // Multi-line
-            console.log("multiline");
-            this._inputCallback = cb;
-            this.editor.setReadOnly(false);
-        }
-        else {
-            // Done
-            console.log("done");
-            this.history.push(input);
-        }
+    this.getInputUpToCursor = function() {
+        this.boundary.setEnd(this.cursor.row, this.cursor.column);
+        return this.editor.session.getTextRange(this.boundary);
     };
 
     this.getSelectionRange = function() {
@@ -375,6 +321,20 @@ var Console = exports.Console = window.Console = function(el, options) {
             this.editor.selection.setSelectionRange(selectionRange);
         }
         return selectionRange;
+    };
+
+    this.enter = function() {
+        var cb = this._inputCallback;
+        delete this._inputCallback;
+        var input = this.getInput();
+        this.puts("\n");
+        this.editor.setReadOnly(true);
+        var ret = cb(input);
+        if(ret === false) {
+            // Multi-line
+            this._inputCallback = cb;
+            this.editor.setReadOnly(false);
+        }
     };
 
     this.readline = function(cb) {
@@ -397,14 +357,6 @@ var Console = exports.Console = window.Console = function(el, options) {
 
     this.puts = function(text) {
         this.editor.insert(text);
-    };
-
-    this.historyNext = function() {
-        this.options.historyNext(this);
-    };
-
-    this.historyPrev = function() {
-        this.options.historyPrev(this);
     };
 
     // Insert
@@ -565,42 +517,7 @@ var Console = exports.Console = window.Console = function(el, options) {
  * Defaults
  */
 Console.defaults = {
-    /**
-     * options.historyNext(console)
-     * - console (Console instance): the console instance;
-     *
-     * Use console.replaceInput(text) to replace the readline content.
-     */
-    historyNext: function(console) {
-        var cmd = console.history.next();
-        if(cmd !== null) {
-            console.replaceInput(cmd);
-        }
-        else {
-            console.replaceInput(console.historyHead || "");
-            console.historyHeadExpired = true;
-        }
-    },
-
-    /**
-     * options.historyPrev(console)
-     * - console (Console instance): the console instance;
-     *
-     * Use console.replaceInput(text) to replace the readline content.
-     */
-    historyPrev: function(console) {
-        var cmd = console.history.prev();
-        if(cmd !== null) {
-            if(!console.historyHead || console.historyHeadExpired) {
-                console.historyHead = console._getInput();
-                console.historyHeadExpired = false;
-            }
-            console.replaceInput(cmd);
-        }
-        else {
-            console.replaceInput("");
-        }
-    }
+    keybinds: []
 };
 
 });

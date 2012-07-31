@@ -11,12 +11,40 @@ var Console = require("./console").Console,
     proxy = require("./util").proxy;
 
 
+var History = exports.History = function() {
+    this.history = [null, null];
+    this.i = 0;
+};
+
+History.prototype = {
+    push: function(cmd) {
+        this.history.pop();
+        this.history.push(cmd);
+        this.history.push(null);
+        this.i = this.history.length - 1;
+        return cmd;
+    },
+
+    next: function() {
+        this.i = Math.min(this.i + 1, this.history.length - 1);
+        return this.history[this.i];
+    },
+
+    prev: function() {
+        this.i = Math.max(0, this.i - 1);
+        return this.history[this.i];
+    }
+};
+
+
 var Shell = exports.Shell = function(el, options) {
     this.options = extend({}, Shell.defaults, options);
     this.console = new Console(el, extend({}, options, {
-        completion: proxy(this.completion, this)
+        keybinds: Shell.defaults.keybinds
     }));
+    this.console.shell = this;
     this.editor = this.console.editor;
+    this.history = new History();
     this.prompt();
 };
 
@@ -31,14 +59,26 @@ var Shell = exports.Shell = function(el, options) {
     this.execute = function(cmd) {
         var ret = this.options.execute(cmd, this);
         if(ret !== false) {
+            this.history.push(cmd);
             this.puts(ret.toString() + "\n");
             this.prompt();
         }
         return ret;
     };
 
-    this.completion = function(partialCmd) {
-        return this.options.completion(partialCmd);
+    this.complete = function() {
+        var partialCmd = this.console.getInputUpToCursor();
+        console.log(partialCmd);
+        var insert = this.options.complete(partialCmd);
+        this.console.insert(insert);
+    };
+
+    this.historyNext = function() {
+        this.options.historyNext(this, this.console);
+    };
+
+    this.historyPrev = function() {
+        this.options.historyPrev(this, this.console);
     };
 
     /**
@@ -59,6 +99,24 @@ var Shell = exports.Shell = function(el, options) {
 Shell.defaults = {
     PS1: "$ ",
 
+    keybinds: [{
+        name: "historynext",
+        bindKey: "Down|Ctrl-N",
+        exec: function(console, args) { console.shell.historyNext(args.times); },
+        multiSelectAction: "forEach",
+        readOnly: true
+    }, {
+        name: "historyprev",
+        bindKey: "Up|Ctrl-P",
+        exec: function(console, args) { console.shell.historyPrev(args.times); },
+        multiSelectAction: "forEach",
+        readOnly: true
+    }, {
+        name: "expand",
+        bindKey: "Tab",
+        exec: function(console) { console.shell.complete(); }
+    }],
+
     /**
      * options.execute(cmd, shell)
      * - cmd (String): command to execute;
@@ -73,15 +131,54 @@ Shell.defaults = {
     },
 
     /**
-     * options.completion(partialCmd)
+     * options.complete(partialCmd)
      * - partialCmd (String): left text entered before hitting completion key;
      * 
      * Returns the completion text. Possible values are:
      * - (null) no suggestion;
      * - (String) text to be completed;
      */
-    completion: function(partialCmd) {
+    complete: function(partialCmd) {
         return "";
+    },
+
+    /**
+     * options.historyNext(shell, console)
+     * - shell (Shell instance): the console instance;
+     * - console (Console instance): the console instance;
+     *
+     * Use console.replaceInput(text) to replace the readline content.
+     */
+    historyNext: function(shell, console) {
+        var cmd = shell.history.next();
+        if(cmd !== null) {
+            console.replaceInput(cmd);
+        }
+        else {
+            console.replaceInput(console.historyHead || "");
+            console.historyHeadExpired = true;
+        }
+    },
+
+    /**
+     * options.historyNext(shell, console)
+     * - shell (Shell instance): the console instance;
+     * - console (Console instance): the console instance;
+     *
+     * Use console.replaceInput(text) to replace the readline content.
+     */
+    historyPrev: function(shell, console) {
+        var cmd = shell.history.prev();
+        if(cmd !== null) {
+            if(!console.historyHead || console.historyHeadExpired) {
+                console.historyHead = console.getInput();
+                console.historyHeadExpired = false;
+            }
+            console.replaceInput(cmd);
+        }
+        else {
+            console.replaceInput("");
+        }
     }
 };
 
