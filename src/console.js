@@ -269,6 +269,7 @@ commands.handleKeyboard = function(data, hashId, keyString, keyCode, ev) {
 
 var History = exports.History = function() {
     this.history = [null, null];
+    this.i = 0;
 };
 
 History.prototype = {
@@ -576,7 +577,7 @@ Console.defaults = {
             console.replaceInput(cmd);
         }
         else {
-            console.replaceInput(console.historyHead);
+            console.replaceInput(console.historyHead || "");
             console.historyHeadExpired = true;
         }
     },
