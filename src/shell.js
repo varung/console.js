@@ -68,9 +68,10 @@ var Shell = exports.Shell = function(el, options) {
 
     this.complete = function() {
         var partialCmd = this.console.getInputUpToCursor();
-        console.log(partialCmd);
-        var insert = this.options.complete(partialCmd);
-        this.console.insert(insert);
+        var insert = this.options.complete(partialCmd, this.console);
+        if(typeof insert !== "undefined") {
+            this.console.insert(insert);
+        }
     };
 
     this.historyNext = function() {
@@ -131,14 +132,15 @@ Shell.defaults = {
     },
 
     /**
-     * options.complete(partialCmd)
+     * options.complete(partialCmd, console)
      * - partialCmd (String): left text entered before hitting completion key;
+     * - console (Console instance): the console instance;
      * 
      * Returns the completion text. Possible values are:
      * - (null) no suggestion;
      * - (String) text to be completed;
      */
-    complete: function(partialCmd) {
+    complete: function(partialCmd, console) {
         return "";
     },
 
