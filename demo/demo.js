@@ -18,7 +18,7 @@ require([ "require", "ace/ace", "src/shell", "src/console", "src/util" ], functi
     var shell = window._shell = new Shell("shell", {
         PS1: ">>> ",
         execute: function(cmd, shell) {
-            if(cmd.length == 0 || !evenParentheses(cmd)) {
+            if(!evenParentheses(cmd)) {
               return false;
             }
             var output;
