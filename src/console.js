@@ -330,6 +330,7 @@ var Console = exports.Console = window.Console = function(el, options) {
         var cb = this._inputCallback;
         delete this._inputCallback;
         var input = this.getInput();
+        this.navigateFileEnd();
         this.puts("\n");
         this.editor.setReadOnly(true);
         var ret = cb(input);
