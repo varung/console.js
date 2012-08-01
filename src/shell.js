@@ -154,7 +154,7 @@ Shell.defaults = {
         if(cmd !== null) {
             console.replaceInput(cmd);
         }
-        else {
+        else if(typeof console.historyHead !== "undefined") {
             console.replaceInput(console.historyHead || "");
             console.historyHeadExpired = true;
         }
@@ -170,13 +170,13 @@ Shell.defaults = {
     historyPrev: function(shell, console) {
         var cmd = shell.history.prev();
         if(cmd !== null) {
-            if(!console.historyHead || console.historyHeadExpired) {
+            if(typeof console.historyHead === "undefined" || console.historyHeadExpired) {
                 console.historyHead = console.getInput();
                 console.historyHeadExpired = false;
             }
             console.replaceInput(cmd);
         }
-        else {
+        else if(typeof console.historyHead !== "undefined") {
             console.replaceInput("");
         }
     }
