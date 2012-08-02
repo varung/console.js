@@ -60,7 +60,7 @@ var Shell = exports.Shell = function(el, options) {
         var ret = this.options.execute(cmd, this);
         if(ret !== false) {
             this.history.push(cmd);
-            this.puts(ret.toString() + "\n");
+            this.puts(ret.toString());
             this.prompt();
         }
         return ret;
@@ -128,7 +128,7 @@ Shell.defaults = {
      * - (String) execution output
      */
     execute: function(cmd, shell) {
-        return cmd;
+        return cmd + "\n";
     },
 
     /**

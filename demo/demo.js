@@ -3,7 +3,7 @@
  * Copyright (C) 2012 Varun Ganapathi
  */
 
-require([ "require", "ace/ace", "src/shell", "src/console", "src/util" ], function(require, ace, shell, console, util) {
+require([ "require", "ace/ace", "src/shell", "src/console", "src/util" ], function(require, ace, shell) {
     // workers do not work for file:
     if (location.protocol == "file:") {
         var EditSession = require("ace/edit_session").EditSession;
@@ -23,10 +23,11 @@ require([ "require", "ace/ace", "src/shell", "src/console", "src/util" ], functi
             }
             var output;
             try {
-                output = JSON.stringify(window.eval(cmd)) || "";
+                output = JSON.stringify(window.eval(cmd));
+                output = output ? output + "\n" : "";
             }
             catch(e) {
-                output = e.toString();
+                output = e.toString() + "\n";
             }
             return output;
         },
