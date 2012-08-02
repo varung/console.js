@@ -244,7 +244,7 @@ var Console = exports.Console = window.Console = function(el, options) {
     editor.on("click", proxy(this.onCursorMove, this));
 
     // Overloading editor.onPaste
-    this.onPaste = editor.onPaste;
+    this._onPaste = editor.onPaste;
     editor.onPaste = proxy(this.onPaste, this);
 
     // Combining default commands with option.keybinds
@@ -263,6 +263,14 @@ var Console = exports.Console = window.Console = function(el, options) {
     var handleKeyboard = commands.handleKeyboard;
     commands.handleKeyboard = function(data, hashId, keyString, keyCode, ev) {
         var args = [self].concat(arguments);
+        var command = this.findKeyCommand(hashId, keyString);
+
+        if(hashId == -1 || (command && !command.readOnly)) {
+            (function() {
+                this.fixCursorOrSelection();
+            }).call(self);
+        }
+
         // Normal keys
         if(hashId == -1) {
             if(!self.options.handleKeyboard.apply(this, args)) {
@@ -293,14 +301,46 @@ var Console = exports.Console = window.Console = function(el, options) {
 (function(){
     var self = this;
 
+    this._fixCursor = function() {
+        if(!this._isInBoundary(this.editor.getCursorPosition())) {
+            this.moveCursorTo(this.cursor.row, this.cursor.column);
+            this.editor.clearSelection();
+        }
+    };
+
+    this._fixSelection = function() {
+        var selectionRange = this.editor.getSelectionRange();
+        var reverse = this.editor.getSelection().isBackwards();
+        if(!this._isSelectionInBoundary()) {
+            var boundary = this.boundary;
+            selectionRange.start = boundary.start;
+            this.editor.selection.setSelectionRange(selectionRange, reverse);
+        }
+        return selectionRange;
+    };
+
     this._isInBoundary = function(point) {
         var bs = this.boundary.start;
         return point.row > bs.row ||
             (point.row == bs.row && point.column >= bs.column);
     };
 
+    this._isSelectionInBoundary = function() {
+        var selectionRange = this.editor.getSelectionRange();
+        return selectionRange.comparePoint(this.boundary.start) == -1;
+    };
+
     this._updateCursor = function() {
         this.cursor = this.editor.getCursorPosition();
+    };
+
+    this.fixCursorOrSelection = function() {
+        if(this.editor.selection.isEmpty() || !this._isSelectionInBoundary()) {
+            this._fixCursor();
+        }
+        else {
+            this._fixSelection();
+        }
     };
 
     this.getInput = function() {
@@ -317,13 +357,7 @@ var Console = exports.Console = window.Console = function(el, options) {
     };
 
     this.getSelectionRange = function() {
-        var selectionRange = this.editor.getSelectionRange();
-        if(!this._isInBoundary(selectionRange.start)) {
-            var boundary = this.boundary;
-            selectionRange.start = boundary.start;
-            this.editor.selection.setSelectionRange(selectionRange);
-        }
-        return selectionRange;
+        return this._fixSelection();
     };
 
     this.enter = function() {
@@ -365,12 +399,6 @@ var Console = exports.Console = window.Console = function(el, options) {
 
     // Insert
     this.insert = function(text) {
-        if(this.fixCursor) {
-            var cursor = this.fixCursor;
-            this.moveCursorTo(cursor.row, cursor.column);
-            this.editor.clearSelection();
-            delete this.fixCursor;
-        }
         this.editor.insert.apply(this.editor, arguments);
         this._updateCursor();
     };
@@ -431,8 +459,6 @@ var Console = exports.Console = window.Console = function(el, options) {
 
     // Remove
     this.remove = function() {
-        if(!this.editor.selection.isEmpty())
-            this.getSelectionRange();
         var cursor = this.cursor,
             boundary = this.boundary;
         if(cursor.row == boundary.start.row &&
@@ -471,7 +497,7 @@ var Console = exports.Console = window.Console = function(el, options) {
     ["selectAll", "selectPageDown", "selectPageUp"].forEach(function(method) {
         self[method] = function() {
             this.editor[method].apply(this.editor, arguments);
-            this.getSelectionRange();
+            this._fixSelection();
         };
     });
     ["selectFileStart", "selectUp", "selectFileEnd", "selectDown",
@@ -480,7 +506,7 @@ var Console = exports.Console = window.Console = function(el, options) {
     ].forEach(function(method) {
         self[method] = function() {
             this.editor.getSelection()[method]();
-            this.getSelectionRange();
+            this._fixSelection();
         };
     });
 
@@ -497,9 +523,14 @@ var Console = exports.Console = window.Console = function(el, options) {
      * Events
      */
     this.onCursorMove = function() {
-        if(!this._isInBoundary(this.editor.getCursorPosition())) {
-            this.fixCursor = this.cursor;
+        if(this._isInBoundary(this.editor.getCursorPosition())) {
+            this._updateCursor();
         }
+    };
+
+    this.onPaste = function(text) {
+        this.fixCursorOrSelection();
+        this._onPaste.apply(this, arguments);
     };
 
     /**
@@ -508,7 +539,7 @@ var Console = exports.Console = window.Console = function(el, options) {
     this.destroy = function() {
         var editor = this.editor;
         editor.removeListener("click", this.onCursorMove);
-        editor.onPaste = this.onPaste;
+        editor.onPaste = this._onPaste;
         editor.commands = this._commands;
         editor.keyBinding.$handlers = this._handlers;
         editor.unsetStyle("console-mode");
