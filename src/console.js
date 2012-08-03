@@ -236,11 +236,12 @@ var Console = exports.Console = window.Console = function(el, options) {
     var self = this;
     var editor = this.editor = ace.edit(el);
     this.options = extend({}, Console.defaults, options);
-    editor.setReadOnly(true);
     editor.console = this;
     this.cursor = this.editor.getCursorPosition();
     this.boundary = new Range.fromPoints(this.cursor, this.cursor);
 
+    editor.setReadOnly(true);
+    editor.session.setUseWrapMode(true);
     editor.on("click", proxy(this.onCursorMove, this));
 
     // Overloading editor.onPaste
@@ -375,6 +376,10 @@ var Console = exports.Console = window.Console = function(el, options) {
         }
     };
 
+    this.puts = function(text) {
+        this.editor.insert(text);
+    };
+
     this.readline = function(cb) {
         if(this._inputCallback) {
             throw "Already reading line";
@@ -393,8 +398,9 @@ var Console = exports.Console = window.Console = function(el, options) {
         this.insert(text);
     };
 
-    this.puts = function(text) {
-        this.editor.insert(text);
+    this.setWidth = function(value) {
+        this.editor.session.adjustWrapLimit(value);
+        this.editor.renderer.setPrintMarginColumn(value);
     };
 
     // Insert
