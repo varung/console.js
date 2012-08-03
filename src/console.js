@@ -242,6 +242,7 @@ var Console = exports.Console = window.Console = function(el, options) {
 
     editor.setReadOnly(true);
     editor.session.setUseWrapMode(true);
+    editor.setHighlightActiveLine(false);
     editor.on("click", proxy(this.onCursorMove, this));
 
     // Overloading editor.onPaste
