@@ -16,14 +16,12 @@ body {
     width: 100%;
     font-family: Arial, Helvetica, sans-serif, Tahoma, Verdana, sans-serif;
     font-size: 12px;
-    background: rgb(14, 98, 165);
-    color: white;
 }
 
 #shell {
     position: absolute;
     top:  0px;
-    left: 280px;
+    left: 0px;
     bottom: 0px;
     right: 0px;
     background: white;

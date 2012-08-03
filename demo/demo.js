@@ -15,7 +15,7 @@ require([ "require", "ace/ace", "src/shell", "src/console", "src/util" ], functi
     };
 
     var Shell = require("src/shell").Shell;
-    var shell = window._shell = new Shell("shell", {
+    var shell = window.shell = new Shell("shell", {
         PS1: ">>> ",
         execute: function(cmd, shell) {
             if(!evenParentheses(cmd)) {
@@ -37,5 +37,6 @@ require([ "require", "ace/ace", "src/shell", "src/console", "src/util" ], functi
     });
     shell.editor.setTheme("ace/theme/textmate");
     shell.editor.session.setMode("ace/mode/javascript");
+    shell.console.setWidth(80);
     shell.focus();
 });
