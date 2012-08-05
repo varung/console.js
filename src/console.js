@@ -245,6 +245,11 @@ var Console = exports.Console = window.Console = function(el, options) {
     editor.setHighlightActiveLine(false);
     editor.on("click", proxy(this.onCursorMove, this));
 
+    // Overloading editor.selectAll, because of quadclick. Otherwise, cannot
+    // workaround it
+    this._selectAll = editor.selectAll;
+    editor.selectAll = proxy(this.selectAll, this);
+
     // Overloading editor.onPaste
     this._onPaste = editor.onPaste;
     editor.onPaste = proxy(this.onPaste, this);
@@ -501,7 +506,11 @@ var Console = exports.Console = window.Console = function(el, options) {
     };
 
     // Select
-    ["selectAll", "selectPageDown", "selectPageUp"].forEach(function(method) {
+    this.selectAll = function() {
+        this._selectAll.apply(this.editor, arguments);
+        this._fixSelection();
+    };
+    ["selectPageDown", "selectPageUp"].forEach(function(method) {
         self[method] = function() {
             this.editor[method].apply(this.editor, arguments);
             this._fixSelection();
@@ -546,6 +555,7 @@ var Console = exports.Console = window.Console = function(el, options) {
     this.destroy = function() {
         var editor = this.editor;
         editor.removeListener("click", this.onCursorMove);
+        editor.selectAll = this._selectAll;
         editor.onPaste = this._onPaste;
         editor.commands = this._commands;
         editor.keyBinding.$handlers = this._handlers;
