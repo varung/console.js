@@ -269,7 +269,7 @@ var Console = exports.Console = window.Console = function(el, options) {
 
     var handleKeyboard = commands.handleKeyboard;
     commands.handleKeyboard = function(data, hashId, keyString, keyCode, ev) {
-        var args = [self].concat(arguments);
+        var args = [self].concat(slice.call(arguments, 0));
         var command = this.findKeyCommand(hashId, keyString);
 
         if(hashId == -1 || command) {
