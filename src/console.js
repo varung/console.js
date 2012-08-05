@@ -272,10 +272,8 @@ var Console = exports.Console = window.Console = function(el, options) {
         var args = [self].concat(arguments);
         var command = this.findKeyCommand(hashId, keyString);
 
-        if(hashId == -1 || (command && !command.readOnly)) {
-            (function() {
-                this.fixCursorOrSelection();
-            }).call(self);
+        if(hashId == -1 || command) {
+            self.fixCursorOrSelection.call(self);
         }
 
         // Normal keys
