@@ -16,6 +16,24 @@ var History = exports.History = function() {
     this.i = 0;
 };
 
+var defaultCommands = [{
+    name: "historynext",
+    bindKey: "Down|Ctrl-N",
+    exec: function(console, args) { console.shell.historyNext(args.times); },
+    multiSelectAction: "forEach",
+    readOnly: true
+}, {
+    name: "historyprev",
+    bindKey: "Up|Ctrl-P",
+    exec: function(console, args) { console.shell.historyPrev(args.times); },
+    multiSelectAction: "forEach",
+    readOnly: true
+}, {
+    name: "expand",
+    bindKey: "Tab",
+    exec: function(console) { console.shell.complete(); }
+}];
+
 History.prototype = {
     push: function(cmd) {
         this.history.pop();
@@ -40,7 +58,7 @@ History.prototype = {
 var Shell = exports.Shell = function(el, options) {
     this.options = extend({}, Shell.defaults, options);
     this.console = new Console(el, extend({}, options, {
-        keybinds: Shell.defaults.keybinds
+        keybinds: defaultCommands.concat(options.keybinds)
     }));
     this.console.shell = this;
     this.editor = this.console.editor;
@@ -99,24 +117,6 @@ var Shell = exports.Shell = function(el, options) {
  */
 Shell.defaults = {
     PS1: "$ ",
-
-    keybinds: [{
-        name: "historynext",
-        bindKey: "Down|Ctrl-N",
-        exec: function(console, args) { console.shell.historyNext(args.times); },
-        multiSelectAction: "forEach",
-        readOnly: true
-    }, {
-        name: "historyprev",
-        bindKey: "Up|Ctrl-P",
-        exec: function(console, args) { console.shell.historyPrev(args.times); },
-        multiSelectAction: "forEach",
-        readOnly: true
-    }, {
-        name: "expand",
-        bindKey: "Tab",
-        exec: function(console) { console.shell.complete(); }
-    }],
 
     /**
      * options.execute(cmd, shell)
