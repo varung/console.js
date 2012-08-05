@@ -571,6 +571,7 @@ Console.defaults = {
      * options.keybinds = []    // Custom keybinds
      * - For more information on the data structure, see:
      *   ace/commands/default_commands;
+     * - OBS: exec(console) instead of exec(editor)
      */
     keybinds: [],
 
