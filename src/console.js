@@ -271,6 +271,7 @@ var Console = exports.Console = window.Console = function(el, options) {
     commands.handleKeyboard = function(data, hashId, keyString, keyCode, ev) {
         var args = [self].concat(slice.call(arguments, 0));
         var command = this.findKeyCommand(hashId, keyString);
+        var isEditorReadOnly = self.editor.getReadOnly();
 
         if(hashId == -1 || command) {
             self.fixCursorOrSelection.call(self);
@@ -278,7 +279,10 @@ var Console = exports.Console = window.Console = function(el, options) {
 
         // Normal keys
         if(hashId == -1) {
-            if(!self.options.handleKeyboard.apply(this, args)) {
+            if(
+                !self.options.handleKeyboard.apply(this, args) ||
+                isEditorReadOnly
+            ) {
                 // way to cancel bubbling
                 return {command: {exec: function() {return true;}}};
             }
@@ -286,7 +290,10 @@ var Console = exports.Console = window.Console = function(el, options) {
         }
         // Commands
         else {
-            if(self.options.handleKeyboard.apply(this, args)) {
+            if(
+                self.options.handleKeyboard.apply(this, args) &&
+                !isEditorReadOnly
+            ) {
                 // keep going
                 return handleKeyboard.apply(this, arguments);
             }
