@@ -3,7 +3,7 @@
  * Copyright (C) 2012 Varun Ganapathi
  */
 
-require([ "require", "ace/ace", "src/shell", "src/console", "src/util" ], function(require, ace, shell) {
+require([ "require", "ace/ace", "src/shell", "src/console", "src/util" ], function(require) {
     // workers do not work for file:
     if (location.protocol == "file:") {
         var EditSession = require("ace/edit_session").EditSession;
@@ -11,7 +11,7 @@ require([ "require", "ace/ace", "src/shell", "src/console", "src/util" ], functi
     }
 
     var evenParentheses = function(text) {
-      return text.split("(").length - text.split(")").length == 0;
+      return text.split("(").length - text.split(")").length === 0;
     };
 
     var Shell = require("src/shell").Shell;
