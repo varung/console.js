@@ -165,10 +165,6 @@ var defaultCommands = [{
 
 // commands disabled in readOnly mode
 {
-    name: "enter",
-    bindKey: "Return",
-    exec: function(editor) { editor.console.enter(); }
-}, {
     name: "cut",
     exec: function(editor) {
         var range = editor.console.getSelectionRange();
@@ -236,6 +232,7 @@ var Console = exports.Console = window.Console = function(el, options) {
     var self = this;
     var editor = this.editor = ace.edit(el);
     this.options = extend({}, Console.defaults, options);
+    this.buffer = "";
     editor.console = this;
     this.cursor = this.editor.getCursorPosition();
     this.boundary = new Range.fromPoints(this.cursor, this.cursor);
@@ -279,11 +276,12 @@ var Console = exports.Console = window.Console = function(el, options) {
 
         // Normal keys
         if(hashId == -1) {
-            if(
-                !self.options.handleKeyboard.apply(this, args) ||
-                isEditorReadOnly
-            ) {
+            if(!self.options.handleKeyboard.apply(this, args)) {
                 // way to cancel bubbling
+                return {command: {exec: function() {return true;}}};
+            }
+            if(isEditorReadOnly) {
+                self.buffer += keyString;
                 return {command: {exec: function() {return true;}}};
             }
             return handleKeyboard.apply(this, arguments);
@@ -313,6 +311,28 @@ var Console = exports.Console = window.Console = function(el, options) {
 (function(){
     var self = this;
 
+    this._enter = function() {
+        var self = this;
+        var cb = this._inputCallback;
+        delete this._inputCallback;
+        var input = this.getInput();
+        this.navigateFileEnd();
+        this.write("\n");
+        this.editor.setReadOnly(true);
+        var finalStuff = function(ret) {
+            if(ret === false) {
+                // Multi-line
+                self._inputCallback = cb;
+                self.editor.setReadOnly(false);
+                self._flushBuffer.call(self);
+            }
+        };
+        var ret = cb(input, finalStuff);
+        if(typeof ret !== "undefined") {
+            finalStuff(ret);
+        }
+    };
+
     this._fixCursor = function() {
         if(!this._isInBoundary(this.editor.getCursorPosition())) {
             this.moveCursorTo(this.cursor.row, this.cursor.column);
@@ -340,6 +360,14 @@ var Console = exports.Console = window.Console = function(el, options) {
     this._isSelectionInBoundary = function() {
         var selectionRange = this.editor.getSelectionRange();
         return selectionRange.comparePoint(this.boundary.start) == -1;
+    };
+
+    this._flushBuffer = function() {
+        if(this.buffer.length > 0) {
+            var buffer = this.buffer;
+            this.buffer = "";
+            this.insert(buffer);
+        }
     };
 
     this._updateCursor = function() {
@@ -372,27 +400,6 @@ var Console = exports.Console = window.Console = function(el, options) {
         return this._fixSelection();
     };
 
-    this.enter = function() {
-        var self = this;
-        var cb = this._inputCallback;
-        delete this._inputCallback;
-        var input = this.getInput();
-        this.navigateFileEnd();
-        this.write("\n");
-        this.editor.setReadOnly(true);
-        var finalStuff = function(ret) {
-            if(ret === false) {
-                // Multi-line
-                self._inputCallback = cb;
-                self.editor.setReadOnly(false);
-            }
-        };
-        var ret = cb(input, finalStuff);
-        if(typeof ret !== "undefined") {
-            finalStuff(ret);
-        }
-    };
-
     this.readline = function(cb) {
         if(this._inputCallback) {
             throw "Already reading line";
@@ -402,6 +409,7 @@ var Console = exports.Console = window.Console = function(el, options) {
         this.boundary.setStart(this.cursor.row, this.cursor.column);
         delete this.historyHead;
         this.editor.setReadOnly(false);
+        this._flushBuffer();
     };
 
     this.replaceInput = function(text) {
@@ -422,8 +430,22 @@ var Console = exports.Console = window.Console = function(el, options) {
 
     // Insert
     this.insert = function(text) {
-        this.editor.insert.apply(this.editor, arguments);
-        this._updateCursor();
+        if(!this._inputCallback) {
+            buffer += text;
+        }
+        else {
+            if(/\n/.test(text)) {
+                text = text.split("\n");
+                this.buffer = text.slice(1).join("\n");
+                this.editor.insert.call(this.editor, text[0]);
+                this._updateCursor();
+                this._enter();
+            }
+            else {
+                this.editor.insert.apply(this.editor, arguments);
+                this._updateCursor();
+            }
+        }
     };
 
     // Navigate
