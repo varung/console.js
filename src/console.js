@@ -370,7 +370,7 @@ var Console = exports.Console = window.Console = function(el, options) {
         delete this._inputCallback;
         var input = this.getInput();
         this.navigateFileEnd();
-        this.puts("\n");
+        this.write("\n");
         this.editor.setReadOnly(true);
         var ret = cb(input);
         if(ret === false) {
@@ -378,10 +378,6 @@ var Console = exports.Console = window.Console = function(el, options) {
             this._inputCallback = cb;
             this.editor.setReadOnly(false);
         }
-    };
-
-    this.puts = function(text) {
-        this.editor.insert(text);
     };
 
     this.readline = function(cb) {
@@ -405,6 +401,10 @@ var Console = exports.Console = window.Console = function(el, options) {
     this.setWidth = function(value) {
         this.editor.session.adjustWrapLimit(value);
         this.editor.renderer.setPrintMarginColumn(value);
+    };
+
+    this.write = function(text) {
+        this.editor.insert(text);
     };
 
     // Insert

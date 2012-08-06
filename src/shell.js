@@ -70,7 +70,7 @@ var Shell = exports.Shell = function(el, options) {
     var self = this;
 
     this.prompt = function() {
-        this.puts(this.options.PS1);
+        this.write(this.options.PS1);
         this.console.readline( proxy(this.execute, this) );
     };
 
@@ -78,7 +78,7 @@ var Shell = exports.Shell = function(el, options) {
         var ret = this.options.execute(cmd, this);
         if(ret !== false) {
             this.history.push(cmd);
-            this.puts(ret.toString());
+            this.write(ret.toString());
             this.prompt();
         }
         return ret;
@@ -103,7 +103,7 @@ var Shell = exports.Shell = function(el, options) {
     /**
      * Console proxy
      */
-    ["focus", "puts"].forEach(function(method) {
+    ["focus", "write"].forEach(function(method) {
         self[method] = function() {
             this.console[method].apply(this.console, arguments);
         };
