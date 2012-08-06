@@ -62,7 +62,9 @@ var Shell = exports.Shell = function(el, options) {
     }));
     this.console.shell = this;
     this.editor = this.console.editor;
-    this.history = new History();
+    if(this.options.init) {
+        this.options.init(this);
+    }
     this.prompt();
 };
 
@@ -77,7 +79,7 @@ var Shell = exports.Shell = function(el, options) {
     this.execute = function(cmd) {
         var ret = this.options.execute(cmd, this);
         if(ret !== false) {
-            this.history.push(cmd);
+            this.options.historyPush(cmd, this);
             this.write(ret.toString());
             this.prompt();
         }
@@ -119,6 +121,16 @@ Shell.defaults = {
     PS1: "$ ",
 
     /**
+     * options.init(shell)
+     * - shell (Shell instance): the shell instance;
+     *
+     * Returns nothing
+     */
+    init: function(shell) {
+        shell.history = new History();
+    },
+
+    /**
      * options.execute(cmd, shell)
      * - cmd (String): command to execute;
      * - shell (Shell instance): the shell instance;
@@ -142,6 +154,17 @@ Shell.defaults = {
      */
     complete: function(partialCmd, console) {
         return "";
+    },
+
+    /**
+     * options.historyPush(cmd, shell)
+     * - cmd (String): command executed;
+     * - shell (Shell instance): the console instance;
+     *
+     * Returns nothing
+     */
+    historyPush: function(cmd, shell) {
+        shell.history.push(cmd);
     },
 
     /**
