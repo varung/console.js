@@ -76,21 +76,30 @@ var Shell = exports.Shell = function(el, options) {
         this.console.readline( proxy(this.execute, this) );
     };
 
-    this.execute = function(cmd) {
-        var ret = this.options.execute(cmd, this);
-        if(ret !== false) {
-            this.options.historyPush(cmd, this);
-            this.write(ret.toString());
-            this.prompt();
+    this.execute = function(cmd, cb) {
+        var self = this;
+        var execute = function(ret) {
+            (function() {
+                if(ret !== false) {
+                    this.options.historyPush(cmd, this);
+                    this.write(ret.toString());
+                    this.prompt();
+                }
+                cb(ret);
+            }).call(self, ret);
+        };
+        var ret = this.options.execute(cmd, this, execute);
+        if(typeof ret !== "undefined") {
+            execute(ret);
+            return ret;
         }
-        return ret;
     };
 
     this.complete = function() {
         var partialCmd = this.console.getInputUpToCursor();
         var insert = this.options.complete(partialCmd, this.console);
         if(typeof insert !== "undefined") {
-            this.console.insert(insert);
+            this.insert(insert);
         }
     };
 
@@ -100,6 +109,12 @@ var Shell = exports.Shell = function(el, options) {
 
     this.historyPrev = function() {
         this.options.historyPrev(this, this.console);
+    };
+
+    this.insert = function(text) {
+        if(text !== null) {
+            this.console.insert(text);
+        }
     };
 
     /**
@@ -131,11 +146,14 @@ Shell.defaults = {
     },
 
     /**
-     * options.execute(cmd, shell)
+     * options.execute(cmd, shell, returnCb)
      * - cmd (String): command to execute;
      * - shell (Shell instance): the shell instance;
+     * - returnCb (function(ret)): callback function;
+     *   - ret: the same return values below except undefined;
      *
      * Returns the execution output. Possible values are:
+     * - (undefined) halt, will use callback to send output asynchronously;
      * - (false) holds execution, needs more input, allow multi-line command;
      * - (String) execution output
      */
@@ -146,13 +164,14 @@ Shell.defaults = {
     /**
      * options.complete(partialCmd, console)
      * - partialCmd (String): left text entered before hitting completion key;
-     * - console (Console instance): the console instance;
+     * - shell (Shell instance): the shell instance;
      * 
      * Returns the completion text. Possible values are:
+     * - (undefined) halt, will use callback to send output asynchronously;
      * - (null) no suggestion;
      * - (String) text to be completed;
      */
-    complete: function(partialCmd, console) {
+    complete: function(partialCmd, shell) {
         return "";
     },
 

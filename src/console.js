@@ -373,17 +373,23 @@ var Console = exports.Console = window.Console = function(el, options) {
     };
 
     this.enter = function() {
+        var self = this;
         var cb = this._inputCallback;
         delete this._inputCallback;
         var input = this.getInput();
         this.navigateFileEnd();
         this.write("\n");
         this.editor.setReadOnly(true);
-        var ret = cb(input);
-        if(ret === false) {
-            // Multi-line
-            this._inputCallback = cb;
-            this.editor.setReadOnly(false);
+        var finalStuff = function(ret) {
+            if(ret === false) {
+                // Multi-line
+                self._inputCallback = cb;
+                self.editor.setReadOnly(false);
+            }
+        };
+        var ret = cb(input, finalStuff);
+        if(typeof ret !== "undefined") {
+            finalStuff(ret);
         }
     };
 
