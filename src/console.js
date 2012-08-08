@@ -255,6 +255,22 @@ var Console = exports.Console = window.Console = function(el, options) {
     this._onPaste = editor.onPaste;
     editor.onPaste = proxy(this.onPaste, this);
 
+    // Disabling drag n' drop
+    this._$mouseHandler = {
+        startDrag: editor.$mouseHandler.startDrag,
+        dragWait: editor.$mouseHandler.dragWait,
+        dragWaitEnd: editor.$mouseHandler.dragWaitEnd,
+        drag: editor.$mouseHandler.drag,
+        dragEnd: editor.$mouseHandler.dragEnd
+    };
+    var nullFunc = function() {};
+    editor.$mouseHandler.startDrag = nullFunc;
+    editor.$mouseHandler.startDrag = nullFunc;
+    editor.$mouseHandler.dragWait = nullFunc;
+    editor.$mouseHandler.dragWaitEnd = nullFunc;
+    editor.$mouseHandler.drag = nullFunc;
+    editor.$mouseHandler.dragEnd = nullFunc;
+
     // Combining default commands with option.keybinds
     var commands = new CommandManager(
         useragent.isMac ? "mac" : "win",
@@ -585,6 +601,12 @@ var Console = exports.Console = window.Console = function(el, options) {
         editor.removeListener("click", this.onCursorMove);
         editor.selectAll = this._selectAll;
         editor.onPaste = this._onPaste;
+        editor.$mouseHandler.startDrag = this._$mouseHandler.startDrag;
+        editor.$mouseHandler.startDrag = this._$mouseHandler.startDrag;
+        editor.$mouseHandler.dragWait = this._$mouseHandler.dragWait;
+        editor.$mouseHandler.dragWaitEnd = this._$mouseHandler.dragWaitEnd;
+        editor.$mouseHandler.drag = this._$mouseHandler.drag;
+        editor.$mouseHandler.dragEnd = this._$mouseHandler.dragEnd;
         editor.commands = this._commands;
         editor.keyBinding.$handlers = this._handlers;
         editor.unsetStyle("console-mode");
