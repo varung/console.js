@@ -165,6 +165,10 @@ var defaultCommands = [{
 
 // commands disabled in readOnly mode
 {
+    name: "enter",
+    bindKey: "Return",
+    exec: function(editor) { editor.console.enter(); }
+}, {
     name: "cut",
     exec: function(editor) {
         var range = editor.console.getSelectionRange();
@@ -311,28 +315,6 @@ var Console = exports.Console = window.Console = function(el, options) {
 (function(){
     var self = this;
 
-    this._enter = function() {
-        var self = this;
-        var cb = this._inputCallback;
-        delete this._inputCallback;
-        var input = this.getInput();
-        this.navigateFileEnd();
-        this.write("\n");
-        this.editor.setReadOnly(true);
-        var finalStuff = function(ret) {
-            if(ret === false) {
-                // Multi-line
-                self._inputCallback = cb;
-                self.editor.setReadOnly(false);
-                self._flushBuffer.call(self);
-            }
-        };
-        var ret = cb(input, finalStuff);
-        if(typeof ret !== "undefined") {
-            finalStuff(ret);
-        }
-    };
-
     this._fixCursor = function() {
         if(!this._isInBoundary(this.editor.getCursorPosition())) {
             this.moveCursorTo(this.cursor.row, this.cursor.column);
@@ -372,6 +354,28 @@ var Console = exports.Console = window.Console = function(el, options) {
 
     this._updateCursor = function() {
         this.cursor = this.editor.getCursorPosition();
+    };
+
+    this.enter = function() {
+        var self = this;
+        var cb = this._inputCallback;
+        delete this._inputCallback;
+        var input = this.getInput();
+        this.navigateFileEnd();
+        this.write("\n");
+        this.editor.setReadOnly(true);
+        var finalStuff = function(ret) {
+            if(ret === false) {
+                // Multi-line
+                self._inputCallback = cb;
+                self.editor.setReadOnly(false);
+                self._flushBuffer.call(self);
+            }
+        };
+        var ret = cb(input, finalStuff);
+        if(typeof ret !== "undefined") {
+            finalStuff(ret);
+        }
     };
 
     this.fixCursorOrSelection = function() {
@@ -434,17 +438,8 @@ var Console = exports.Console = window.Console = function(el, options) {
             buffer += text;
         }
         else {
-            if(/\n/.test(text)) {
-                text = text.split("\n");
-                this.buffer = text.slice(1).join("\n");
-                this.editor.insert.call(this.editor, text[0]);
-                this._updateCursor();
-                this._enter();
-            }
-            else {
-                this.editor.insert.apply(this.editor, arguments);
-                this._updateCursor();
-            }
+            this.editor.insert.apply(this.editor, arguments);
+            this._updateCursor();
         }
     };
 
