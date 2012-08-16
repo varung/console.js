@@ -331,6 +331,12 @@ var Console = exports.Console = window.Console = function(el, options) {
 (function(){
     var self = this;
 
+    this._clearUndo = function() {
+        this.editor.session.$deltasFold = [];
+        this.editor.session.$deltasDoc = [];
+        this.editor.session.getUndoManager().reset();
+    };
+
     this._fixCursor = function() {
         if(!this._isInBoundary(this.editor.getCursorPosition())) {
             this.moveCursorTo(this.cursor.row, this.cursor.column);
@@ -430,6 +436,7 @@ var Console = exports.Console = window.Console = function(el, options) {
         delete this.historyHead;
         this.editor.setReadOnly(false);
         this._flushBuffer();
+        this._clearUndo();
     };
 
     this.replaceInput = function(text) {
