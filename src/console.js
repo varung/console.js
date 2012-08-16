@@ -350,6 +350,10 @@ var Console = exports.Console = window.Console = function(el, options) {
         if(!this._isSelectionInBoundary()) {
             var boundary = this.boundary;
             selectionRange.start = boundary.start;
+            if(selectionRange.end.row < boundary.start.row || (selectionRange.end.row === boundary.start.row && selectionRange.end.column < boundary.start.column)) {
+                selectionRange.end = boundary.start;
+                
+            }
             this.editor.selection.setSelectionRange(selectionRange, reverse);
         }
         return selectionRange;
@@ -401,7 +405,7 @@ var Console = exports.Console = window.Console = function(el, options) {
     };
 
     this.fixCursorOrSelection = function() {
-        if(this.editor.selection.isEmpty() || !this._isSelectionInBoundary()) {
+        if(this.editor.selection.isEmpty()) {
             this._fixCursor();
         }
         else {
