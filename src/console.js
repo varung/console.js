@@ -514,14 +514,23 @@ var Console = exports.Console = window.Console = function(el, options) {
     };
 
     // Remove
-    this.remove = function() {
-        var cursor = this.cursor,
-            boundary = this.boundary;
-        if(cursor.row == boundary.start.row &&
-           cursor.column == boundary.start.column) {
-            return;
+    this.remove = function(dir) {
+        if (this.editor.selection.isEmpty()){
+            if (dir == "left")
+                this.editor.selection.selectLeft();
+            else
+                this.editor.selection.selectRight();
         }
-        this.editor.remove.apply(this.editor, arguments);
+        var selectionRange = this.getSelectionRange();
+        if (this.editor.getBehavioursEnabled()) {
+            var session = this.editor.session;
+            var state = session.getState(selectionRange.start.row);
+            var new_range = session.getMode().transformAction(state, 'deletion', this, session, selectionRange);
+            if (new_range)
+                selectionRange = new_range;
+        }
+        this.editor.session.remove(selectionRange);
+        this.editor.clearSelection();
         this._updateCursor();
     };
     this.removeToLineEnd = function() {
@@ -553,11 +562,13 @@ var Console = exports.Console = window.Console = function(el, options) {
     this.selectAll = function() {
         this._selectAll.apply(this.editor, arguments);
         this._fixSelection();
+        this._updateCursor();
     };
     ["selectPageDown", "selectPageUp"].forEach(function(method) {
         self[method] = function() {
             this.editor[method].apply(this.editor, arguments);
             this._fixSelection();
+            this._updateCursor();
         };
     });
     ["selectFileStart", "selectUp", "selectFileEnd", "selectDown",
@@ -567,6 +578,7 @@ var Console = exports.Console = window.Console = function(el, options) {
         self[method] = function() {
             this.editor.getSelection()[method]();
             this._fixSelection();
+            this._updateCursor();
         };
     });
 
