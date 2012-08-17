@@ -19,7 +19,7 @@ git clone git://github.com/rxaviers/ace.git
 Branch console_hacks
 ```
 cd ace
-git branch console_hacks
+git checkout console_hacks
 ```
 
 Build
