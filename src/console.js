@@ -481,13 +481,8 @@ var Console = exports.Console = window.Console = function(el, options) {
         this._updateCursor();
     };
     this.navigateLeft = function() {
-        var cursor = this.cursor,
-            boundary = this.boundary;
-        if(cursor.row == boundary.start.row &&
-           cursor.column == boundary.start.column) {
-            return;
-        }
         this.editor.navigateLeft.apply(this.editor, arguments);
+        this._fixCursor();
         this._updateCursor();
     };
     this.navigateLineEnd = function() {
