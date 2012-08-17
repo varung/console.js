@@ -37,6 +37,7 @@ require([ "require", "ace/ace", "src/shell", "src/console", "src/util" ], functi
     });
     shell.editor.setTheme("ace/theme/textmate");
     shell.editor.session.setMode("ace/mode/javascript");
+    shell.editor.renderer.setShowGutter(false);
     shell.console.setWidth(80);
     shell.focus();
 });
