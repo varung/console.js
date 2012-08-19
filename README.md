@@ -9,7 +9,7 @@ Optional:
 - ace theme-textmate
 - ace mode-javascript
 
-### How to build our custom hacked version of ACE
+### How to build our custom hacked ACE
 
 Clone our custom repo
 ```
