@@ -6,9 +6,10 @@
 define(function(require, exports, module) {
 "use strict";
 
-var Console = require("./console").Console,
-    extend = require("./util").extend,
-    proxy = require("./util").proxy;
+var Console = require("./console").Console;
+var extend = require("./util").extend;
+var proxy = require("./util").proxy;
+var shellMode = require("./mode/shell").Mode;
 
 
 var History = exports.History = function() {
@@ -65,6 +66,7 @@ var Shell = exports.Shell = function(el, options) {
     if(this.options.init) {
         this.options.init(this);
     }
+    this._promptPositions = [];
     this.prompt();
 };
 
@@ -73,6 +75,8 @@ var Shell = exports.Shell = function(el, options) {
 
     this.prompt = function() {
         this.write(this.options.PS1);
+        // Prompt begin
+        this._promptPositions.push(this.editor.getCursorPosition().row);
         this.console.readline( proxy(this.execute, this) );
     };
 
@@ -82,6 +86,8 @@ var Shell = exports.Shell = function(el, options) {
             (function() {
                 if(ret !== false) {
                     this.options.historyPush(cmd, this);
+                    // Prompt end
+                    this._promptPositions.push(this.editor.getCursorPosition().row);
                     this.write(ret.toString());
                     this.prompt();
                 }
@@ -117,6 +123,17 @@ var Shell = exports.Shell = function(el, options) {
         }
     };
 
+    this.isPromptAt = function(row) {
+        var i;
+        for(i=0; this._promptPositions[i]<=row && i<this._promptPositions.length; i++);
+        return i%2 == 1;
+    };
+
+    this.setMode = function(promptHighlightRules) {
+        var mode = new shellMode(this, this.options.PS1, promptHighlightRules);
+        this.editor.session.setMode(mode);
+    };
+
     /**
      * Console proxy
      */
@@ -133,6 +150,9 @@ var Shell = exports.Shell = function(el, options) {
  * Defaults
  */
 Shell.defaults = {
+    /**
+     * Prompt String 1
+     */
     PS1: "$ ",
 
     /**
