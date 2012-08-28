@@ -15,22 +15,24 @@ var ShellHighlightRules = function(shell, PS1, promptHighlightRules) {
     };
     this.$rules = {
         start: [{
-            token: "PS1",
+            token: function(m1,row) { 
+                console.log("start triggered:"+m1+":"+row);
+                return "PS1"
+            },
             regex: "^" + escapeRegExp(PS1),
             next: "prompt-start"
         }]
     };
     this.embedRules(promptHighlightRules, "prompt-", [{
         token : function(m1, row) {
-            return shell.isPromptAt(row) ? {
-                next: "start",
-                type:"prompt-end"
-            } : {
-                next: null,
-                type: "nobigdeal"
-            };
+            console.log("Escape triggered:"+m1+":"+row + ": promptAtRow:"+shell.isPromptAt(row));
+            if (!shell.isPromptAt(row)) {
+                return { next: "start", type:"prompt-end" }
+            } else {
+                return { next: null, type: "text" };
+            }
         },
-        regex: "$"
+        regex: "^."
     }]);
 }
 
