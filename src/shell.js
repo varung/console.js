@@ -82,12 +82,13 @@ var Shell = exports.Shell = function(el, options) {
 
     this.execute = function(cmd, cb) {
         var self = this;
+
+        // Prompt end, push it in case the command works
+        this._promptPositions.push(this.editor.getCursorPosition().row);
         var execute = function(ret) {
             (function() {
                 if(ret !== false) {
                     this.options.historyPush(cmd, this);
-                    // Prompt end
-                    this._promptPositions.push(this.editor.getCursorPosition().row);
                     this.write(ret.toString());
                     this.prompt();
                 }
@@ -98,6 +99,8 @@ var Shell = exports.Shell = function(el, options) {
         if(typeof ret !== "undefined") {
             execute(ret);
             return ret;
+        } else {
+            this._promptPositions.pop();
         }
     };
 
