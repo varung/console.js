@@ -3,7 +3,9 @@
  * Copyright (C) 2012 Varun Ganapathi
  */
 
-require([ "require", "ace/ace", "src/shell", "src/console", "src/util" ], function(require) {
+require([ "require", "ace/ace", "ace/mode/javascript_highlight_rules", "src/shell", "src/console", "src/util" ], function(require) {
+    var javaScriptHighlightRules = require("ace/mode/javascript_highlight_rules").JavaScriptHighlightRules;
+
     // workers do not work for file:
     if (location.protocol == "file:") {
         var EditSession = require("ace/edit_session").EditSession;
@@ -36,7 +38,7 @@ require([ "require", "ace/ace", "src/shell", "src/console", "src/util" ], functi
         }
     });
     shell.editor.setTheme("ace/theme/textmate");
-    shell.editor.session.setMode("ace/mode/javascript");
+    shell.setMode(javaScriptHighlightRules);
     shell.editor.renderer.setShowGutter(false);
     shell.console.setWidth(80);
     shell.focus();
