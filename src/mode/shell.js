@@ -24,7 +24,9 @@ var Mode = function(shell, PS1, promptHighlightRules) {
         console.log( ((this.$shell.isPromptAt(row))?"[PROMPT]":"[NOT PROMPT]") + ":"+ line);
         var res = this.oldGetLineTokens(line,startState,row);
         if(!this.$shell.isPromptAt(row)) {
-            res = { state: "start", tokens : [ { type: "text", value: line } ] };
+            var type = "text";
+            if(line.indexOf("Error") != -1) type = "invalid";
+            res = { state: "start", tokens : [ { type: type, value: line } ] };
         }
         //console.log(res);
         return res;
