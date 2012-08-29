@@ -82,12 +82,8 @@ var Shell = exports.Shell = function(el, options) {
 
     this.execute = function(cmd, cb) {
         var self = this;
-        //console.log("execute:" + cmd);
-        //console.log(this._promptPositions);
-        //console.log("Adding current row:"+ this.editor.getCursorPosition().row);
         // Prompt end, push it in case the command works
         this._promptPositions.push(this.editor.getCursorPosition().row);
-        //console.log(this._promptPositions);
         var execute = function(ret) {
             (function() {
                 if(ret !== false) {
@@ -99,12 +95,7 @@ var Shell = exports.Shell = function(el, options) {
             }).call(self, ret);
         };
         var ret = this.options.execute(cmd, this, execute);
-        console.log("options.execute:  " + cmd + " returned: " + ret + " " + typeof(ret));
-        // I am confused: what is ret supposed to be in each case?
-        // this code works...not sure why.
-        console.log( "Boolean:" + typeof(ret) == typeof(true) );
         if(ret===false || typeof(ret) == "undefined" ) {
-            console.log("Popping");
             // they told us to continue, so go back to being a prompt
             this._promptPositions.pop();
         }
