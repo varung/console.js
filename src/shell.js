@@ -6,9 +6,10 @@
 define(function(require, exports, module) {
 "use strict";
 
-var Console = require("./console").Console,
-    extend = require("./util").extend,
-    proxy = require("./util").proxy;
+var Console = require("./console").Console;
+var extend = require("./util").extend;
+var proxy = require("./util").proxy;
+var shellMode = require("./mode/shell").Mode;
 
 
 var History = exports.History = function() {
@@ -65,6 +66,7 @@ var Shell = exports.Shell = function(el, options) {
     if(this.options.init) {
         this.options.init(this);
     }
+    this._promptPositions = [];
     this.prompt();
 };
 
@@ -73,11 +75,15 @@ var Shell = exports.Shell = function(el, options) {
 
     this.prompt = function() {
         this.write(this.options.PS1);
+        // Prompt begin
+        this._promptPositions.push(this.editor.getCursorPosition().row);
         this.console.readline( proxy(this.execute, this) );
     };
 
     this.execute = function(cmd, cb) {
         var self = this;
+        // Prompt end, push it in case the command works
+        this._promptPositions.push(this.editor.getCursorPosition().row);
         var execute = function(ret) {
             (function() {
                 if(ret !== false) {
@@ -89,7 +95,13 @@ var Shell = exports.Shell = function(el, options) {
             }).call(self, ret);
         };
         var ret = this.options.execute(cmd, this, execute);
+        if(ret===false || typeof(ret) == "undefined" ) {
+            // they told us to continue, so go back to being a prompt
+            this._promptPositions.pop();
+        }
         if(typeof ret !== "undefined") {
+            // succesfully executed cmd
+            // print out results
             execute(ret);
             return ret;
         }
@@ -117,6 +129,17 @@ var Shell = exports.Shell = function(el, options) {
         }
     };
 
+    this.isPromptAt = function(row) {
+        var i;
+        for(i=0; this._promptPositions[i]<=row && i<this._promptPositions.length; i++);
+        return i%2 == 1;
+    };
+
+    this.setMode = function(promptHighlightRules) {
+        var mode = new shellMode(this, this.options.PS1, promptHighlightRules);
+        this.editor.session.setMode(mode);
+    };
+
     /**
      * Console proxy
      */
@@ -133,6 +156,9 @@ var Shell = exports.Shell = function(el, options) {
  * Defaults
  */
 Shell.defaults = {
+    /**
+     * Prompt String 1
+     */
     PS1: "$ ",
 
     /**
