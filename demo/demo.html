@@ -8,6 +8,52 @@
     <meta name="author" content="Rafael Xavier">
     <meta name="copyright" content="Varun Ganapathi">
     <link rel="stylesheet" href="styles.css" type="text/css" media="screen" charset="utf-8">
+    <style>
+    #autocomplete_outer { 
+      display:none;
+      outline:none;
+      z-index: 1000;
+    }
+    #autocomplete_list {
+      display:inline-block;
+      background-color:white;
+      padding:0px;
+      max-height:120px;
+      margin-bottom:1em;
+      border:1px solid grey;
+      scroll:auto;
+      overflow-y:scroll;
+      font-family:monospace,fixed;
+      cursor:default;
+      color: black;
+    }
+    .autocomplete_text {
+      color: black;
+      font-family: monospace;
+      text-align:left;
+    }
+
+    ul.autocomplete {
+      display: inline-block;
+      list-style-type: none;
+      padding:0;
+      margin:0;
+    }
+
+    ul.autocomplete li {
+      background-color:white;
+      padding-left:1px;
+      padding-right:5px;
+      border: 1px solid white;
+      font-family:monospace;
+    }
+    ul.autocomplete li.selected {
+      background-color:lightgrey;
+    }
+    ul.autocomplete li.hover {
+      border: 1px solid grey;
+    }
+    </style>
 </head>
 <body>
   <div id="shell"></div>
@@ -19,6 +65,7 @@
           }
       };
   </script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js" type="text/javascript"></script>
   <script src="require.js" data-main="demo" type="text/javascript"></script>
   <script defer src="../libs/ace.js" type="text/javascript"></script>
   <script defer src="../libs/theme-textmate.js" type="text/javascript"></script>

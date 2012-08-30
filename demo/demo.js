@@ -37,6 +37,7 @@ require([ "require", "ace/ace", "ace/mode/javascript_highlight_rules", "src/shel
     });
     new Autocomplete(shell.console, {
         source: function(request, responseCallback) {
+            responseCallback(["Alpha", "Beta", "Gamma"]);
         }
     });
     shell.editor.setTheme("ace/theme/textmate");
