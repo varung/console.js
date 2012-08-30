@@ -137,10 +137,20 @@ var Autocomplete = exports.Autocomplete = function(console, options) {
     };
 
     this.cursorCoords = function() {
+        // TODO: might it be better to get an offset version rather than hard coding 16
         var position = this.console.editor.getCursorPosition(),
             coords = this.console.editor.renderer.textToScreenCoordinates(position.row, position.column);
         return [coords.pageX, coords.pageY];
     };
+
+    // returns y location of bottom most row
+    this.bottomCoords = function() {
+        var renderer = this.console.editor.renderer;
+        //var lastRow = renderer.getLastFullyVisibleRow();
+        //console.log("lastRow:" + lastRow);
+        //var coords = renderer.textToScreenCoordinates( lastRow, 0);
+        return $(renderer.getContainerElement()).height();
+    }
 
     this.show = function(source) {
         if(source.length > 0) {
@@ -258,7 +268,10 @@ var Autocomplete = exports.Autocomplete = function(console, options) {
     };
 
     this.myShow = function(x, y, res) {
-        showListAtLocation(y, x, res, null, proxy(this.complete, this), false);//y > $(this.console.element).height() - 130);
+        var bottom = this.bottomCoords();
+        console.log(x,y,bottom);
+        // TODO: do not hard code 130. get max-height param from autocomplete_outer
+        showListAtLocation(y, x, res, null, proxy(this.complete, this), y > (bottom - 130));
         this.prevX = x;
         this.prevY = y;
     };
