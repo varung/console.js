@@ -9,6 +9,7 @@ define(function(require, exports, module) {
 var ace = require("ace/ace"),
     CommandManager = require("ace/commands/command_manager").CommandManager,
     Editor = require("ace/editor").Editor,
+    event = require("ace/lib/event"),
     EventEmitter = require("ace/lib/event_emitter").EventEmitter,
     extend = require("./util").extend,
     lang = require("ace/lib/lang"),
@@ -237,6 +238,7 @@ var defaultCommands = [{
 
 var Console = exports.Console = window.Console = function(el, options) {
     var self = this;
+    this.element = el;
 
     // This needs to be overloaded before instance creation, because:
     // event.addCommandKeyListener(text, host.onCommandKey.bind(host));
@@ -246,7 +248,12 @@ var Console = exports.Console = window.Console = function(el, options) {
             console: self,
             ev: ev,
             hashId: hashId,
-            keyCode: keyCode
+            keyCode: keyCode,
+            preventDefault: function() {
+                this.defaultPrevented = true;   // preventDefault commandKey
+                event.preventDefault(ev);       // preventDefault keydown
+                event.stopPropagation(ev);      // stopPropagation keydown
+            }
         });
     };
     var editor = this.editor = ace.edit(el);
