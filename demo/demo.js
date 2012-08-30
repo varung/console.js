@@ -3,7 +3,8 @@
  * Copyright (C) 2012 Varun Ganapathi
  */
 
-require([ "require", "ace/ace", "ace/mode/javascript_highlight_rules", "src/shell", "src/console", "src/util" ], function(require) {
+require([ "require", "ace/ace", "ace/mode/javascript_highlight_rules", "src/shell", "src/console", "src/autocomplete", "src/util" ], function(require) {
+    var Autocomplete = require("src/autocomplete").Autocomplete;
     var javaScriptHighlightRules = require("ace/mode/javascript_highlight_rules").JavaScriptHighlightRules;
 
     // workers do not work for file:
@@ -32,9 +33,10 @@ require([ "require", "ace/ace", "ace/mode/javascript_highlight_rules", "src/shel
                 output = e.toString() + "\n";
             }
             return output;
-        },
-        complete: function(partialCmd) {
-            return ".completion.stuff";
+        }
+    });
+    new Autocomplete(shell.console, {
+        source: function(request, responseCallback) {
         }
     });
     shell.editor.setTheme("ace/theme/textmate");
