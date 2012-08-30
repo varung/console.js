@@ -455,7 +455,9 @@ var Console = exports.Console = window.Console = function(el, options) {
 
     this.getInputUpToCursor = function() {
         this.boundary.setEnd(this.cursor.row, this.cursor.column);
-        return this.editor.session.getTextRange(this.boundary);
+        var res = this.editor.session.getTextRange(this.boundary);
+        console.log("getInputUpToCursor: " + res);
+        return res ;
     };
 
     this.getSelectionRange = function() {

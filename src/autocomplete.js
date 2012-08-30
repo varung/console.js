@@ -60,7 +60,7 @@ function autoComplete() {
     })
     .bind("pgup", function() {
       // FIXME the below round leads to negative numbers
-      selectItem((selected+items.length-8)%(items.length));
+      selectItem((selected+10*items.length-8)%(items.length));
     })
     .bind("pgdown", function() {
       selectItem((selected+8)%(items.length));
@@ -176,7 +176,8 @@ var Autocomplete = exports.Autocomplete = function(console, options) {
 
     this._search = function(term) {
         var self = this;
-        this.options.source(term, function(res) {
+        this.last_query = term;
+        this.options.source(this.last_query, function(res) {
             var source = res || [];
             self.show.call(self, source);
         });
@@ -184,7 +185,8 @@ var Autocomplete = exports.Autocomplete = function(console, options) {
 
     this.complete = function(str) {
         if(str) {
-            this.console.insert(str);
+            var token = this.last_query.split(/\W+/).pop().trim()
+            this.console.insert(str.substr(token.length));
         }
     };
 
@@ -234,9 +236,8 @@ var Autocomplete = exports.Autocomplete = function(console, options) {
                 if(event.hashId == keys.KEY_MODS.ctrl) {
                     break;
                 }
-
             case keys.BACKSPACE:
-                setTimeout(proxy(this.search, this), 300); // TODO better approach
+                this.delayedSearch();
                 return;
             default:
                 return;
@@ -260,10 +261,19 @@ var Autocomplete = exports.Autocomplete = function(console, options) {
         event.stopPropagation();
     };
 
+    this.delayedSearch = function() {
+        // multiple ones to ensure that it happens as soon as possible
+        setTimeout(proxy(this.search, this), 50); 
+        setTimeout(proxy(this.search, this), 100); 
+        setTimeout(proxy(this.search, this), 200); 
+        setTimeout(proxy(this.search, this), 300);
+    }
+
     this.myTextInput = function(event) {
         console.log("textInput", "text", event.text, "pasted", event.pasted);
         if(this.isActive) {
-            this.search();
+            // [vg] changed to this. could pass in event.text instead?
+            this.delayedSearch();
         }
     };
 
