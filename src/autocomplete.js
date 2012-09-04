@@ -116,12 +116,12 @@ var showListAtLocation = autoComplete();
 
 
 
-var Autocomplete = exports.Autocomplete = function(console, options) {
-    this.console = console;
+var Autocomplete = exports.Autocomplete = function(editor, options) {
+    this.editor = editor;
     this.options = extend({}, Autocomplete.defaults, options);
     this.isActive = false;
-    console.on("commandKey", proxy(this.myCommandKey, this) );
-    console.on("textInput", proxy(this.myTextInput, this) );
+    editor.on("commandKey", proxy(this.myCommandKey, this) );
+    editor.on("textInput", proxy(this.myTextInput, this) );
 };
 
 (function() {
@@ -138,8 +138,8 @@ var Autocomplete = exports.Autocomplete = function(console, options) {
 
     this.cursorCoords = function() {
         // TODO: might it be better to get an offset version rather than hard coding 16
-        var position = this.console.editor.getCursorPosition(),
-            coords = this.console.editor.renderer.textToScreenCoordinates(position.row, position.column);
+        var position = this.editor.getCursorPosition(),
+            coords = this.editor.renderer.textToScreenCoordinates(position.row, position.column);
         return [coords.pageX, coords.pageY];
     };
 
@@ -171,7 +171,10 @@ var Autocomplete = exports.Autocomplete = function(console, options) {
     };
 
     this.search = function() {
-        this._search(this.console.getInputUpToCursor());
+        this.editor.selection.selectWordLeft();
+        var selectionRange = this.getSelectionRange();
+        this.editor.clearSelection();
+        return this.editor.session.getTextRange(selectionRange);
     };
 
     this._search = function(term) {
@@ -184,7 +187,7 @@ var Autocomplete = exports.Autocomplete = function(console, options) {
 
     this.complete = function(str) {
         if(str) {
-            this.console.insert(str);
+            this.editor.insert(str);
         }
     };
 
