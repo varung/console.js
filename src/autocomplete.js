@@ -171,14 +171,18 @@ var Autocomplete = exports.Autocomplete = function(editor, options) {
     };
 
     this.search = function() {
+        var cursor = this.editor.getCursorPosition();
         this.editor.selection.selectWordLeft();
-        var selectionRange = this.getSelectionRange();
+        var selectionRange = this.editor.getSelectionRange();
+        var term = this.editor.session.getTextRange(selectionRange);
         this.editor.clearSelection();
-        return this.editor.session.getTextRange(selectionRange);
+        this.editor.moveCursorTo(cursor.row, cursor.column);
+        this._search(term);
     };
 
     this._search = function(term) {
         var self = this;
+        console.log("_search", term);
         this.options.source(term, function(res) {
             var source = res || [];
             self.show.call(self, source);
