@@ -18,7 +18,11 @@ body {
     font-size: 12px;
 }
 
-#shell {
+.pane {
+    position: relative;
+}
+
+.editor {
     position: absolute;
     top:  0px;
     left: 0px;

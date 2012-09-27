@@ -4,6 +4,10 @@ A javascript console implementation on top of ACE editor.
 ## Dependencies
 
 - ace
+- (jquery)[http://code.jquery.com/jquery-1.8.0.js]
+- (jquery-ui)[http://code.jquery.com/ui/1.9.0-rc.1/jquery-ui.js]
+- (jquery.layout)[http://layout.jquery-dev.net/lib/js/jquery.layout-latest.js]
+- (jquery.layout.css)[http://layout.jquery-dev.net/lib/css/layout-default-latest.css]
 
 Optional:
 - ace theme-textmate
@@ -32,6 +36,14 @@ Copy the built files to /libs
 ```
 cd ..
 cp ace/build/src-min/ace.js console.js/libs
+```
+
+### Downloading dependencies
+
+```
+wget -O libs/jquery.js "http://code.jquery.com/jquery-1.8.0.js"
+wget -O libs/jquery-ui.js "http://code.jquery.com/ui/1.9.0-rc.1/jquery-ui.js"
+wget -O libs/jquery.layout.js "http://layout.jquery-dev.net/lib/js/jquery.layout-latest.js"
 ```
 
 ## Example
