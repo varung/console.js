@@ -22,8 +22,8 @@ require([ "require", "ace/ace", "ace/mode/javascript_highlight_rules", "src/shel
     $("body").layout({
       onresize_end: function(pane, element) {
         var editor = element.children()[0].env.editor;
+        editor.focus();
         editor.resize();
-        console.log(element.children());
       }
     });
 
