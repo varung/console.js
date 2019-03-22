@@ -29,10 +29,6 @@ var defaultCommands = [{
     exec: function(console, args) { console.shell.historyPrev(args.times); },
     multiSelectAction: "forEach",
     readOnly: true
-}, {
-    name: "expand",
-    bindKey: "Tab",
-    exec: function(console) { console.shell.complete(); }
 }];
 
 History.prototype = {
@@ -104,14 +100,6 @@ var Shell = exports.Shell = function(el, options) {
             // print out results
             execute(ret);
             return ret;
-        }
-    };
-
-    this.complete = function() {
-        var partialCmd = this.console.getInputUpToCursor();
-        var insert = this.options.complete(partialCmd, this.console);
-        if(typeof insert !== "undefined") {
-            this.insert(insert);
         }
     };
 

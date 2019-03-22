@@ -8,8 +8,12 @@ define(function(require, exports, module) {
 
 var ace = require("ace/ace"),
     CommandManager = require("ace/commands/command_manager").CommandManager,
+    Editor = require("ace/editor").Editor,
+    event = require("ace/lib/event"),
+    EventEmitter = require("ace/lib/event_emitter").EventEmitter,
     extend = require("./util").extend,
     lang = require("ace/lib/lang"),
+    oop = require("ace/lib/oop"),
     proxy = require("./util").proxy,
     Range = require("ace/range").Range,
     useragent = require("ace/lib/useragent");
@@ -234,7 +238,27 @@ var defaultCommands = [{
 
 var Console = exports.Console = window.Console = function(el, options) {
     var self = this;
+    this.element = el;
+
+    // This needs to be overloaded before instance creation, because:
+    // event.addCommandKeyListener(text, host.onCommandKey.bind(host));
+    this._onCommandKey = Editor.prototype.onCommandKey;
+    Editor.prototype.onCommandKey = function(ev, hashId, keyCode) {
+        self._emit("commandKey", {
+            console: self,
+            ev: ev,
+            hashId: hashId,
+            keyCode: keyCode,
+            preventDefault: function() {
+                this.defaultPrevented = true;   // preventDefault commandKey
+                event.preventDefault(ev);       // preventDefault keydown
+                event.stopPropagation(ev);      // stopPropagation keydown
+            }
+        });
+    };
     var editor = this.editor = ace.edit(el);
+    Editor.prototype.onCommandKey = this._onCommandKey;
+
     this.options = extend({}, Console.defaults, options);
     this.buffer = "";
     editor.console = this;
@@ -284,6 +308,17 @@ var Console = exports.Console = window.Console = function(el, options) {
         }))
     );
 
+    this._onTextInput = editor.onTextInput;
+    editor.onTextInput = function(text, pasted) {
+        self._emit("textInput", {console: self, text: text, pasted: pasted});
+    };
+    this.setDefaultHandler("commandKey", function(ev) {
+        self._onCommandKey.call(editor, ev.ev, ev.hashId, ev.keyCode);
+    });
+    this.setDefaultHandler("textInput", function(ev) {
+        self._onTextInput.call(editor, ev.text);
+    });
+
     var handleKeyboard = commands.handleKeyboard;
     commands.handleKeyboard = function(data, hashId, keyString, keyCode, ev) {
         var args = [self].concat(slice.call(arguments, 0));
@@ -296,10 +331,7 @@ var Console = exports.Console = window.Console = function(el, options) {
 
         // Normal keys
         if(hashId == -1) {
-            if(!self.options.handleKeyboard.apply(this, args)) {
-                // way to cancel bubbling
-                return {command: {exec: function() {return true;}}};
-            }
+            // If readonly, save to buffer and cancel insertion
             if(isEditorReadOnly) {
                 self.buffer += keyString;
                 return {command: {exec: function() {return true;}}};
@@ -308,10 +340,7 @@ var Console = exports.Console = window.Console = function(el, options) {
         }
         // Commands
         else {
-            if(
-                self.options.handleKeyboard.apply(this, args) &&
-                !isEditorReadOnly
-            ) {
+            if(!isEditorReadOnly) {
                 // keep going
                 return handleKeyboard.apply(this, arguments);
             }
@@ -329,6 +358,9 @@ var Console = exports.Console = window.Console = function(el, options) {
 };
 
 (function(){
+
+    oop.implement(this, EventEmitter);
+    
     var self = this;
 
     this._clearUndo = function() {
@@ -423,7 +455,9 @@ var Console = exports.Console = window.Console = function(el, options) {
 
     this.getInputUpToCursor = function() {
         this.boundary.setEnd(this.cursor.row, this.cursor.column);
-        return this.editor.session.getTextRange(this.boundary);
+        var res = this.editor.session.getTextRange(this.boundary);
+        console.log("getInputUpToCursor: " + res);
+        return res ;
     };
 
     this.getSelectionRange = function() {
@@ -591,7 +625,7 @@ var Console = exports.Console = window.Console = function(el, options) {
     /**
      * Editor proxy
      */
-    ["_emit", "focus", "getCursorPosition", "moveCursorTo"].forEach(function(method) {
+    ["focus", "getCursorPosition", "moveCursorTo"].forEach(function(method) {
         self[method] = function() {
             this.editor[method].apply(this.editor, arguments);
         };
@@ -625,6 +659,8 @@ var Console = exports.Console = window.Console = function(el, options) {
         editor.$mouseHandler.dragWaitEnd = this._$mouseHandler.dragWaitEnd;
         editor.$mouseHandler.drag = this._$mouseHandler.drag;
         editor.$mouseHandler.dragEnd = this._$mouseHandler.dragEnd;
+        editor.onCommandKey = this._onCommandKey;
+        editor.onTextInput = this._onTextInput;
         editor.commands = this._commands;
         editor.keyBinding.$handlers = this._handlers;
         editor.unsetStyle("console-mode");
@@ -643,22 +679,7 @@ Console.defaults = {
      *   ace/commands/default_commands;
      * - OBS: exec(console) instead of exec(editor)
      */
-    keybinds: [],
-
-    /**
-     * options.handleKeyboard(data, hashId, keyString, keyCode)
-     * - console (Console instance): the console instance;
-     * - other arguments: for more details, see
-     *   ace/keyboard/hash_handler#handleKeyboard, and
-     *   ace/keyboard/keybinding#$callKeyboardHandlers;
-     *
-     * Returns whether or not to echo the character:
-     * - (true) to echo;
-     * - (false) NOT to echo;
-     */
-    handleKeyboard: function(console, data, hashId, keyString, keyCode) {
-        return true;
-    }
+    keybinds: []
 };
 
 });
